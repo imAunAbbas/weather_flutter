@@ -1,44 +1,19 @@
 import 'package:flutter/material.dart';
-import '../services/weather.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:weather_app/bloc/weather.dart';
+import 'package:weather_app/bloc/weather_bloc.dart';
 import 'city_screen.dart';
 
 class LocationScreen extends StatefulWidget {
-  LocationScreen({this.locationWeather});
+  LocationScreen({this.weatherModel});
 
-  final locationWeather;
+  final WeatherModel weatherModel;
 
   @override
   _LocationScreenState createState() => _LocationScreenState();
 }
 
 class _LocationScreenState extends State<LocationScreen> {
-  WeatherModel weather = WeatherModel();
-  int temperature;
-  String cityName;
-  String message;
-
-  @override
-  void initState() {
-    super.initState();
-
-    updateUI(widget.locationWeather);
-  }
-
-  void updateUI(dynamic weatherData) {
-    setState(() {
-      if (weatherData == null) {
-        temperature = 0;
-        cityName = 'ERROR';
-        message = 'wrong input or connection issue';
-        return;
-      }
-      dynamic temp = weatherData['main']['temp'];
-      temperature = temp.toInt();
-      message = weatherData['weather'][0]['description'];
-      cityName = weatherData['name'];
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -62,10 +37,8 @@ class _LocationScreenState extends State<LocationScreen> {
                         },
                       ),
                     );
-                    if (typedName != null) {
-                      var weatherData = await weather.getCityWeather(typedName);
-                      updateUI(weatherData);
-                    }
+                    BlocProvider.of<WeatherBloc>(context)
+                        .add(FetchCityWeather(cityName: typedName));
                   },
                   child: Icon(
                     Icons.search,
@@ -84,7 +57,7 @@ class _LocationScreenState extends State<LocationScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
                     Text(
-                      '$cityName',
+                      '${widget.weatherModel.cityName}',
                       style: Theme.of(context).textTheme.headline,
                     ),
                     SizedBox(
@@ -93,7 +66,7 @@ class _LocationScreenState extends State<LocationScreen> {
                     Row(
                       children: <Widget>[
                         Text(
-                          '$temperature°',
+                          '${widget.weatherModel.temperature.toInt()}°',
                           style: Theme.of(context).textTheme.display3,
                         ),
                         Padding(
@@ -106,7 +79,7 @@ class _LocationScreenState extends State<LocationScreen> {
                       ],
                     ),
                     Text(
-                      '$message',
+                      '${widget.weatherModel.message}',
                       style: Theme.of(context).textTheme.body2,
                     ),
                   ],
@@ -118,8 +91,7 @@ class _LocationScreenState extends State<LocationScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          var weatherData = await weather.getLocationWeather();
-          updateUI(weatherData);
+          BlocProvider.of<WeatherBloc>(context).add(FetchLocationWeather());
         },
         tooltip: 'My Location',
         child: Icon(Icons.my_location),

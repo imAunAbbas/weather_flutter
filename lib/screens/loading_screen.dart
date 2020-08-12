@@ -1,32 +1,35 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:weather_app/bloc/weather_bloc.dart';
 import 'location_screen.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
-import '../services/weather.dart';
 
-class LoadingScreen extends StatefulWidget {
+class LoadingScreen extends StatelessWidget {
   @override
-  State<StatefulWidget> createState() {
-    return _LoadingScreenState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+        create: (context) => WeatherBloc()..add(FetchLocationWeather()),
+        child: BlocBuilder<WeatherBloc, WeatherState>(
+          builder: (context, state) {
+            if (state is WeatherInitial) {
+              return Loading();
+            }
+            if (state is Failure) {
+              print("Network Error!");
+              return Container(
+                height: 1,
+                width: 1,
+              );
+            }
+            if (state is Success) {
+              return LocationScreen(weatherModel: state.weatherModel);
+            }
+          },
+        ));
   }
 }
 
-class _LoadingScreenState extends State<LoadingScreen> {
-  @override
-  void initState() {
-    super.initState();
-    getLocationData();
-  }
-
-  void getLocationData() async {
-    var weatherData = await WeatherModel().getLocationWeather();
-
-    Navigator.push(context, MaterialPageRoute(builder: (context) {
-      return LocationScreen(
-        locationWeather: weatherData,
-      );
-    }));
-  }
-
+class Loading extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
